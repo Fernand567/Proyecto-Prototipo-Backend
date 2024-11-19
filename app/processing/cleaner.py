@@ -1,63 +1,65 @@
 # app/processing/cleaner.py
 import pandas as pd
 
+def replace_commas(df: pd.DataFrame, columns: list) -> pd.DataFrame:
+    """Reemplaza las comas por puntos en las columnas especificadas."""
+    df[columns] = df[columns].apply(lambda col: col.astype(str).str.replace(',', '.', regex=False))
+    return df
+
+def remove_zero_max_speed(df: pd.DataFrame) -> pd.DataFrame:
+    """Elimina registros donde la velocidad máxima de la calle es 0."""
+    initial_count = len(df)
+    df = df[df['street_max_speed'].astype(float) > 0]
+    print(f"Eliminados {initial_count - len(df)} registros con velocidad máxima de calle <= 0.")
+    return df
+
+def filter_below_speed_limit(df: pd.DataFrame) -> pd.DataFrame:
+    """Filtra registros donde la velocidad registrada no supera el límite de velocidad."""
+    initial_count = len(df)
+    df = df[df['velocidad'].astype(float) > df['street_max_speed'].astype(float)]
+    print(f"Eliminados {initial_count - len(df)} registros con velocidad menor o igual al límite permitido.")
+    return df
+
+def get_max_speed_factor(street_max_speed: float) -> int:
+    """Determina el factor máximo de exceso de velocidad según el límite de velocidad."""
+    if street_max_speed <= 50:
+        return 3  # Tolerancia mayor para calles de baja velocidad
+    return 2  # Tolerancia menor para calles de alta velocidad
+
+def apply_speed_factor(df: pd.DataFrame) -> pd.DataFrame:
+    """Filtra registros basados en un factor máximo de velocidad."""
+    initial_count = len(df)
+    df['max_speed_factor'] = df['street_max_speed'].astype(float).apply(get_max_speed_factor)
+    df = df[df['velocidad'].astype(float) <= df['street_max_speed'].astype(float) * df['max_speed_factor']]
+    print(f"Eliminados {initial_count - len(df)} registros con exceso de velocidad mayor al permitido.")
+    return df.drop(columns=['max_speed_factor'])
+
+def filter_impossible_speeds(df: pd.DataFrame) -> pd.DataFrame:
+    """Elimina registros con excesos de velocidad completamente desproporcionados."""
+    initial_count = len(df)
+    df = df[~((df['velocidad'].astype(float) > df['street_max_speed'].astype(float) * 5) & 
+              (df['street_max_speed'].astype(float) > 50))]
+    print(f"Eliminados {initial_count - len(df)} registros con exceso de velocidad completamente desproporcionado.")
+    return df
+
 def clean_data(df: pd.DataFrame) -> pd.DataFrame:
+    """Limpia los datos aplicando una serie de filtros específicos."""
     print("Recibiendo los siguientes datos para limpiar:")
     print(df.head())  # Mostramos las primeras filas del DataFrame
-    registros_iniciales = len(df)
-    print(f"Total de registros iniciales: {registros_iniciales}")
+    initial_count = len(df)
+    print(f"Total de registros iniciales: {initial_count}")
 
-    # 1. Eliminar registros donde la velocidad máxima de la calle es 0 (dato basura)
-    registros_previos = len(df)
-    df = df[df['street_max_speed'].astype(float) > 0]
-    registros_filtrados = len(df)
-    print(f"Eliminados {registros_previos - registros_filtrados} registros con velocidad máxima de calle <= 0.")
+    # Proceso de limpieza
+    df = replace_commas(df, ['street_max_speed', 'velocidad'])
+    df = remove_zero_max_speed(df)
+    df = filter_below_speed_limit(df)
+    df = apply_speed_factor(df)
+    df = filter_impossible_speeds(df)
 
-    # 2. Filtrar registros donde la velocidad registrada no supera el límite de velocidad
-    registros_previos = len(df)
-    df = df[df['velocidad'].astype(float) > df['street_max_speed'].astype(float)]
-    registros_filtrados = len(df)
-    print(f"Eliminados {registros_previos - registros_filtrados} registros con velocidad menor o igual al límite permitido.")
-
-    # 3. Determinar el factor máximo de exceso de velocidad dependiendo del límite de velocidad de la calle
-    def get_max_speed_factor(street_max_speed):
-        street_max_speed = float(street_max_speed)
-        if street_max_speed <= 50:
-            return 3  # Para calles de velocidad baja, tolerar hasta 3 veces el límite
-        else:
-            return 2  # Para calles de velocidad alta, tolerar hasta 2 veces el límite
-    
-    # 4. Aplicar el factor máximo de velocidad
-    registros_previos = len(df)
-    df['max_speed_factor'] = df['street_max_speed'].apply(get_max_speed_factor)
-    df = df[df['velocidad'].astype(float) <= df['street_max_speed'].astype(float) * df['max_speed_factor']]
-    registros_filtrados = len(df)
-    print(f"Eliminados {registros_previos - registros_filtrados} registros con exceso de velocidad mayor al permitido (según el factor de velocidad).")
-
-    # 5. Filtrar registros con exceso de velocidad **imposible**
-    registros_previos = len(df)
-    df = df[~((df['velocidad'].astype(float) > df['street_max_speed'].astype(float) * 5) & (df['street_max_speed'].astype(float) > 50))]
-    registros_filtrados = len(df)
-    print(f"Eliminados {registros_previos - registros_filtrados} registros con exceso de velocidad completamente desproporcionado (más de 5 veces el límite).")
-
-    # 6. Eliminar la columna temporal 'max_speed_factor', ya que ya no es necesaria
-    df = df.drop(columns=['max_speed_factor'])
-
-    # Posible incorporacion a futurocon biblioteca andrew
-    # Eliminar registros con velocidad máxima inapropiada según el tipo de calle (incongruencias)
-    # # Por ejemplo, una calle residencial no debería tener una velocidad máxima mayor a 60 km/h
-    # df = df[~((df['highway'] == 'residential') & (df['street_max_speed'].astype(float) > 60))]
-    # df = df[~((df['highway'] == 'motorway') & (df['street_max_speed'].astype(float) < 60))] 
-
-
-    registros_finales = len(df)
-    print(f"Total de registros después del procesamiento: {registros_finales}")
-    print(f"Total de registros eliminados: {registros_iniciales - registros_finales}")
-
-    
-    # Mostrar el resultado final del DataFrame
+    final_count = len(df)
+    print(f"Total de registros después del procesamiento: {final_count}")
+    print(f"Total de registros eliminados: {initial_count - final_count}")
     print("DataFrame final después de la limpieza:")
     print(df.head())
 
-    # Devolver el dataframe limpio
     return df
