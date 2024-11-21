@@ -3,27 +3,9 @@ import pandas as pd
 from fastapi import FastAPI
 from app.api.datos import obtener_datos
 from app.processing.cleaner import clean_data
-from app.processing.deduplicator import deduplicate_data
-from app.processing.proximity import get_nearest_coordinate
-
+from app.processing.proximity import process_and_correct_coordinates
 
 app = FastAPI()
-
-# Función para ajustar coordenadas
-def adjust_coordinates(df: pd.DataFrame) -> pd.DataFrame:
-    try:
-        # Aplicar `get_nearest_coordinate` a cada fila del DataFrame
-        df['coordenadas_ajustadas'] = df.apply(
-            lambda row: get_nearest_coordinate(
-                row, 
-                row['direccion']['nameValuePairs']['geometry']['nameValuePairs']['coordinates']['values']
-            ),
-            axis=1
-        )
-        return df
-    except Exception as e:
-        print(f"Error ajustando coordenadas: {e}")
-        raise e
 
 # Ruta para obtener datos
 @app.get("/datos")
@@ -37,14 +19,31 @@ def datos_route():
         
         # Limpiar los datos
         datos_limpios = clean_data(df)
-        
-        # Ajustar coordenadas
-        #datos_ajustados = adjust_coordinates(datos_limpios)
+
+        validos, corregidos, invalidos, cambios = process_and_correct_coordinates(datos_limpios)
+
+        # Mostrar resultados
+        print(f"Registros válidos: {len(validos)}")
+        print(f"Registros corregidos: {len(corregidos)}")
+        print(f"Registros inválidos: {len(invalidos)}")
+        print(f"Total de registros modificados: {cambios}")
+
+        # Inspeccionar los registros corregidos
+        print("\nRegistros corregidos (nuevas coordenadas):")
+        for registro in corregidos:
+            print(f"ID: {registro['id']} - Latitud original: {registro['latitud_original']} - Longitud original: {registro['longitud_original']} - "
+                f"Latitud nueva: {registro['latitud_nueva']} - Longitud nueva: {registro['longitud_nueva']}")
+
+        # Inspeccionar los registros inválidos
+        print("\nRegistros inválidos con errores:")
+        for id_registro, error in invalidos:
+            print(f"ID: {id_registro} - Error: {error}")
         
         # Deduplicar los datos
         #datos_finales = deduplicate_data(datos_ajustados)
 
-        return {"status": "success", "data":datos_limpios }
+        #return {"status": "success", "data": datos_limpios}
+        return {"status": "success", "data": datos_limpios.to_dict(orient="records")}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
