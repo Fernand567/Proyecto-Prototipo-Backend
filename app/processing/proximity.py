@@ -1,7 +1,7 @@
 # app/processing/proximity.py
 from geopy.distance import geodesic
 
-def get_nearest_coordinate(record, street_coordinates):
+def get_nearest_coordinate(record, street_coordinates):  # Quitar la indentación adicional
     min_distance = float("inf")
     closest_point = None
 
