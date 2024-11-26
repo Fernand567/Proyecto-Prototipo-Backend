@@ -2,23 +2,24 @@
 import pandas as pd
 from fastapi import FastAPI
 from app.api.datos import obtener_datos
+
 from app.processing.cleaner import clean_data
 from app.processing.proximity import process_and_correct_coordinates
 
 app = FastAPI()
 
 # Ruta para obtener datos
+
 @app.get("/datos")
 def datos_route():
     try: 
         # Obtener los datos en el momento de la solicitud
         datos = obtener_datos()
-        
-        # Convertir los datos a DataFrame para procesarlos
+        # Convertir los datos a DataFrame para limpiarlos
         df = pd.DataFrame(datos)
-        
         # Limpiar los datos
         datos_limpios = clean_data(df)
+
 
         validos, corregidos, invalidos, cambios = process_and_correct_coordinates(datos_limpios)
 
@@ -44,9 +45,9 @@ def datos_route():
 
         #return {"status": "success", "data": datos_limpios}
         return {"status": "success", "data": datos_limpios.to_dict(orient="records")}
+
     except Exception as e:
         return {"status": "error", "message": str(e)}
-
 
 if __name__ == "__main__":
     import uvicorn

@@ -1,11 +1,7 @@
 from geopy.distance import geodesic
 
 def get_nearest_coordinate(record, street_coordinates):
-    """
-    Encuentra la coordenada más cercana de la lista de coordenadas de una calle.
-    Si la distancia mínima es mayor a 20 metros, retorna la coordenada más cercana de la calle.
-    Si no, retorna la coordenada actual.
-    """
+
     min_distance = float("inf")
     closest_point = None
 
