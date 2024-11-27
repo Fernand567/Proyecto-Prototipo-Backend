@@ -51,6 +51,35 @@ def datos_route():
         return {"status": "error", "message": str(e)}
 
 
+
+#ENDPOINT PARA CONSUMO DE NUESTRA BASE DE DATOS
+@app.get("/api/datos")
+def get_datos(limit: int = 10):
+    """
+    Endpoint para obtener datos de la colección `bbdd_tesis`.
+    - limit: número máximo de documentos a devolver.
+    """
+    if db is None:
+        return {"error": "No hay conexión a la base de datos"}
+
+    try:
+        # Acceder a la colección 'bbdd_tesis'
+        coleccion = db["bbdd_tesis"]
+
+        # Consultar los documentos y aplicar límite
+        datos = list(coleccion.find().limit(limit))
+
+        # Convertir ObjectId a string para que sea serializable en JSON
+        for dato in datos:
+            dato["_id"] = str(dato["_id"])
+
+        return {"status": "success", "data": datos}
+
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
