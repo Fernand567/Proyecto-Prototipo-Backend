@@ -1,4 +1,6 @@
+from shapely.geometry import Point, LineString, Polygon
 from geopy.distance import geodesic
+import pandas as pd
 
 def get_nearest_coordinate(record, street_coordinates):
 
@@ -19,7 +21,7 @@ def get_nearest_coordinate(record, street_coordinates):
             continue
 
     # Si está demasiado lejos, ajustamos
-    if min_distance > 10:  
+    if min_distance > 30:  
         return closest_point
     return current_coord  # Si está cerca, dejamos las coordenadas originales
 
@@ -76,3 +78,53 @@ def process_and_correct_coordinates(data):
 
     return registros_validos, registros_corregidos, registros_invalidos, modificados
 
+def validate_coordinates_with_street(data):
+    registros_invalidos = []  # Registros con errores
+    registros_ajustados = []  # Registros ajustados
+    procesados = []  # Registros procesados
+
+    for index, row in data.iterrows():
+        try:
+            # Extraer coordenadas de 'direccion'
+            direccion = row.get("direccion", {})
+            geometry = direccion.get("nameValuePairs", {}).get("geometry", {})
+            coordinates = geometry.get("nameValuePairs", {}).get("coordinates", {}).get("values", [])
+
+            # Transformar coordenadas al formato requerido
+            street_coords = [
+                tuple(coord["values"]) for coord in coordinates if "values" in coord
+            ]
+
+            # Verificar si hay suficientes puntos para formar una calle
+            if len(street_coords) < 2:
+                raise ValueError("No hay suficientes coordenadas en 'direccion' para definir una calle")
+
+            # Crear la línea de la calle
+            street_line = LineString(street_coords)
+
+            # Obtener las coordenadas actuales
+            current_point = Point(float(row["longitud"]), float(row["latitud"]))
+
+            # Verificar si el punto actual está en la calle
+            if not street_line.contains(current_point):
+                # Ajustar al punto más cercano en la calle
+                nearest_point = street_line.interpolate(street_line.project(current_point))
+                registros_ajustados.append({
+                    "id": row["id"],
+                    "nueva_latitud": nearest_point.y,
+                    "nueva_longitud": nearest_point.x
+                })
+
+                # Actualizar las coordenadas en el registro
+                row["latitud"] = nearest_point.y
+                row["longitud"] = nearest_point.x
+
+            procesados.append(row)
+
+        except Exception as e:
+            registros_invalidos.append({"id": row.get("id", "desconocido"), "error": str(e)})
+
+    # Crear un DataFrame con los registros procesados
+    datos_validados = pd.DataFrame(procesados)
+
+    return datos_validados, registros_invalidos, registros_ajustados
