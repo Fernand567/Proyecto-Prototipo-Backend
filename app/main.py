@@ -48,7 +48,7 @@ def datos_route():
         if db is not None:  
             collection = db["bbdd_tesis"]
             result = collection.insert_many(datos_para_mongo)
-            print(f"Datos guardados en MongoDB. IDs: {result.inserted_ids}")
+            #print(f"Datos guardados en MongoDB. IDs: {result.inserted_ids}")
 
             # Convertir los ObjectId a cadenas para la respuesta
             ids_insertados = [str(id_) for id_ in result.inserted_ids]

@@ -1,4 +1,3 @@
-from app.database.mongodb import datos_collection
 import asyncio
 from pymongo.errors import DuplicateKeyError
 
@@ -49,25 +48,3 @@ def clean_and_validate_data(data):
             continue
 
     return validated_data
-
-# Función para cargar datos en MongoDB
-async def load_data(df):
-    # Convertir DataFrame a diccionarios de Python
-    data = df.to_dict("records")
-
-    # Limpiar y validar los datos antes de insertarlos
-    data = clean_and_validate_data(data)
-
-    # Insertar datos en MongoDB
-    try:
-        for record in data:
-            await datos_collection.update_one(
-                {"id": record["id"]}, 
-                {"$setOnInsert": record},
-                upsert=True
-            )
-        print("Datos insertados o actualizados correctamente.")
-    except DuplicateKeyError as e:
-        print(f"Error: Registro duplicado detectado. Detalle: {e}")
-    except Exception as e:
-        print(f"Error al insertar datos: {e}")
