@@ -1,10 +1,10 @@
-# app/main.py
 import pandas as pd
 from fastapi import FastAPI
 from pymongo import MongoClient
 from app.api.datos import obtener_datos
 from app.processing.cleaner import clean_data
 from app.processing.deduplicator import deduplicate_data
+from app.processing.proximity import process_and_correct_coordinates
 
 app = FastAPI()
 
@@ -31,7 +31,17 @@ def datos_route():
         df = pd.DataFrame(datos)
         # Limpiar los datos
         datos_limpios = clean_data(df)
-        # Convertir a formato para MongoDB
+
+        # Procesar y corregir coordenadas
+        validos, corregidos, invalidos, cambios = process_and_correct_coordinates(datos_limpios)
+
+        # Mostrar resultados en consola
+        print(f"Registros válidos: {len(validos)}")
+        print(f"Registros corregidos: {len(corregidos)}")
+        print(f"Registros inválidos: {len(invalidos)}")
+        print(f"Total de registros modificados: {cambios}")
+
+        # Convertir datos limpios a formato para MongoDB
         datos_para_mongo = datos_limpios.to_dict("records")
 
         # Guardar datos en MongoDB si la conexión está disponible
@@ -46,13 +56,16 @@ def datos_route():
             print("No se pudo guardar en MongoDB porque la conexión no está disponible.")
             ids_insertados = []
 
-        return {"status": "success", "inserted_ids": ids_insertados}
+        return {
+            "status": "success", 
+            "inserted_ids": ids_insertados, 
+            "corrections": corregidos, 
+            "invalids": invalidos
+        }
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-
-
-#ENDPOINT PARA CONSUMO DE NUESTRA BASE DE DATOS
+# Endpoint para consumo de nuestra base de datos
 @app.get("/api/datos")
 def get_datos(limit: int = 10):
     """
@@ -77,8 +90,6 @@ def get_datos(limit: int = 10):
 
     except Exception as e:
         return {"status": "error", "message": str(e)}
-
-
 
 if __name__ == "__main__":
     import uvicorn
