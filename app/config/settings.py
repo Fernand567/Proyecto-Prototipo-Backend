@@ -9,7 +9,12 @@ DATA_URL = os.getenv("DATA_URL")
 API_USERNAME = os.getenv("API_USERNAME")
 PASSWORD = os.getenv("PASSWORD")
 
-MONGODB_SETTINGS = {
-    "host": "mongodb://localhost:27017",
-    "db": "bbdd_backend"
+MONGODB_HISTORICAL = {
+    "host": os.getenv("MONGODB_HISTORICAL_HOST"),
+    "db": os.getenv("MONGODB_HISTORICAL_DB")
+}
+
+MONGODB_VALIDATED = {
+    "host": os.getenv("MONGODB_VALIDATED_HOST"),
+    "db": os.getenv("MONGODB_VALIDATED_DB")
 }
