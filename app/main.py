@@ -2,13 +2,18 @@ import pandas as pd
 from fastapi import FastAPI
 from app.api.datos import obtener_datos
 from app.processing.cleaner import clean_data
-from app.processing.proximity import process_and_correct_coordinates
 from app.db.historical import save_raw_data
 from app.db.validated import save_validated_data
+from fastapi.security import OAuth2PasswordBearer
 from app.processing.loader import format_data_for_validated_storage
-from app.db.connection import get_validated_db
+from fastapi import Depends, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
+from app.config.security import verify_token,create_access_token,authenticate_user
+from app.db.queries import obtener_datos_agrupados 
+
 
 app = FastAPI()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
 
 # Ruta para obtener datos
@@ -107,44 +112,29 @@ def procesar_datos():
         return {"error": str(e)}
 
 
-
-def obtener_datos_agrupados():
-    # Conectar a la base de datos validada
-    db = get_validated_db()
-    
-    # Consulta para agrupar por dirección
-    pipeline = [
-        {"$group": {
-            "_id": "$direccion",  # Agrupar por el campo 'direccion'
-            "coordenadas": {
-                "$push": {  # Formatear los datos
-                    "id": "$id",
-                    "latitud": "$latitud",
-                    "longitud": "$longitud",
-                    "velocidad": "$velocidad"
-                }
-            }
-        }},
-        {"$project": {  # Renombrar los campos para que coincidan con la estructura requerida
-            "_id": 0,
-            "direccion": "$_id",
-            "coordenadas": 1
-        }}
-    ]
-    
-    # Ejecutar la consulta
-    resultados = list(db["validated_data"].aggregate(pipeline))
-    return resultados
-
-
 @app.get("/visualizacion/datos")
-def obtener_datos_web():
-    try:
-        datos = obtener_datos_agrupados()
-        return {"datos": datos}
-    except Exception as e:
-        return {"error": str(e)}
+def obtener_datos_web(token: str = Depends(oauth2_scheme)):
+    """
+    Endpoint protegido con token JWT.
+    """
+    payload = verify_token(token)  # Valida el token
+    username = payload.get("sub")  # Extrae el usuario del token
+    if not username:
+        raise HTTPException(status_code=401, detail="Token inválido")
+    
+    datos = obtener_datos_agrupados()  # Obtiene los datos
+    return {"datos": datos}
 
+
+@app.post("/auth/token")
+def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    """
+    Endpoint para autenticar al usuario y generar un token JWT.
+    """
+    if not authenticate_user(form_data.username, form_data.password):
+        raise HTTPException(status_code=401, detail="Credenciales inválidas")
+    access_token = create_access_token(data={"sub": form_data.username})
+    return {"access_token": access_token}
 
 if __name__ == "__main__":
     import uvicorn

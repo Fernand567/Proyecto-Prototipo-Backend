@@ -18,3 +18,10 @@ MONGODB_VALIDATED = {
     "host": os.getenv("MONGODB_HOST"),
     "db": os.getenv("MONGODB_VALIDATED_DB")
 }
+
+AUTH_USERNAME = os.getenv("AUTH_USERNAME")
+AUTH_PASSWORD = os.getenv("AUTH_PASSWORD")
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM") 
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
+
