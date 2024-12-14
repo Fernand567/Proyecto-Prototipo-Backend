@@ -9,9 +9,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
-      - name: IMPRIMIR 
-        run: echo ${{ secrets.PEM }}   
+        uses: actions/checkout@v2 
       - name: Copy files to EC2
         uses: appleboy/scp-action@v0.1.4
         with:
