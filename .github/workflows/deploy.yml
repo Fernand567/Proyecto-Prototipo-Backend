@@ -43,4 +43,4 @@ jobs:
             echo "ALGORITHM=\"${{ secrets.ALGORITHM }}\"" >> .env
             echo "ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}" >> .env
             docker compose down
-            docker compose up -d
+            docker compose up --build -d
