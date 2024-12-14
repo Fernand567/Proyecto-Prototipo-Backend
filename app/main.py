@@ -63,53 +63,53 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 #     except Exception as e:
 #         return {"status": "error", "message": str(e)}
 
-@app.post("/procesar-datos")
-def procesar_datos():
-    """
-    Endpoint para procesar datos crudos y guardarlos en las bases de datos histórica y validada.
+# @app.post("/procesar-datos")
+# def procesar_datos():
+#     """
+#     Endpoint para procesar datos crudos y guardarlos en las bases de datos histórica y validada.
 
-    Returns:
-        dict: Resumen del procesamiento.
-    """
-    try:
-        # Obtener los datos en el momento de la solicitud
-        print("Obteniendo los datos crudos...")
-        datos = obtener_datos()
+#     Returns:
+#         dict: Resumen del procesamiento.
+#     """
+#     try:
+#         # Obtener los datos en el momento de la solicitud
+#         print("Obteniendo los datos crudos...")
+#         datos = obtener_datos()
 
-        # Convertir los datos a DataFrame para limpiarlos
-        print("Convirtiendo datos a DataFrame...")
-        df = pd.DataFrame(datos)
+#         # Convertir los datos a DataFrame para limpiarlos
+#         print("Convirtiendo datos a DataFrame...")
+#         df = pd.DataFrame(datos)
 
-        # Limpiar los datos usando clean_data (devuelve un DataFrame limpio)
-        print("Limpiando los datos...")
-        datos_limpios_df = clean_data(df)
+#         # Limpiar los datos usando clean_data (devuelve un DataFrame limpio)
+#         print("Limpiando los datos...")
+#         datos_limpios_df = clean_data(df)
 
-        # Convertir el DataFrame limpio a lista de diccionarios
-        print("Convirtiendo datos limpios a lista de diccionarios...")
-        datos_limpios = datos_limpios_df.to_dict(orient="records")
+#         # Convertir el DataFrame limpio a lista de diccionarios
+#         print("Convirtiendo datos limpios a lista de diccionarios...")
+#         datos_limpios = datos_limpios_df.to_dict(orient="records")
 
-        # Paso 1: Guardar datos crudos en la base histórica
-        print("Guardando datos crudos en la base histórica...")
-        save_raw_data(datos)
+#         # Paso 1: Guardar datos crudos en la base histórica
+#         print("Guardando datos crudos en la base histórica...")
+#         save_raw_data(datos)
 
-        # Paso 2: Procesar los datos para la base validada
-        print("Procesando los datos para la base validada...")
-        processed_data = format_data_for_validated_storage(datos_limpios)
+#         # Paso 2: Procesar los datos para la base validada
+#         print("Procesando los datos para la base validada...")
+#         processed_data = format_data_for_validated_storage(datos_limpios)
 
-        # Paso 3: Guardar datos procesados en la base validada
-        print("Guardando datos procesados en la base validada...")
-        save_validated_data(processed_data)
+#         # Paso 3: Guardar datos procesados en la base validada
+#         print("Guardando datos procesados en la base validada...")
+#         save_validated_data(processed_data)
 
-        # Resumen del procesamiento
-        return {
-            "message": "Datos procesados correctamente",
-            "total_historicos": len(datos),  # Número de registros crudos guardados
-            "total_procesados": len(processed_data)  # Número de registros procesados guardados
-        }
+#         # Resumen del procesamiento
+#         return {
+#             "message": "Datos procesados correctamente",
+#             "total_historicos": len(datos),  # Número de registros crudos guardados
+#             "total_procesados": len(processed_data)  # Número de registros procesados guardados
+#         }
 
-    except Exception as e:
-        print(f"Error procesando los datos: {e}")
-        return {"error": str(e)}
+#     except Exception as e:
+#         print(f"Error procesando los datos: {e}")
+#         return {"error": str(e)}
 
 
 @app.get("/visualizacion/datos")
