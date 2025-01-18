@@ -1,0 +1,46 @@
+name: deploy
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2 
+      - name: Copy files to EC2
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.URL }}
+          username: ubuntu
+          key: ${{ secrets.PEM }}
+          source: "."
+          target: "/home/ubuntu/Proyecto-Prototipo-Backend"
+
+      - name: SSH and Deploy to EC2
+        uses: appleboy/ssh-action@v0.1.4
+        with:
+          host: ${{ secrets.URL }}
+          username: ubuntu
+          key: ${{ secrets.PEM }}
+          script: |
+            cd /home/ubuntu/Proyecto-Prototipo-Backend
+            echo "LOGIN_URL=\"${{ secrets.LOGIN_URL }}\"" > .env
+            echo "DATA_URL=\"${{ secrets.DATA_URL }}\"" >> .env
+            echo "API_USERNAME=\"${{ secrets.API_USERNAME }}\"" >> .env
+            echo "PASSWORD=\"${{ secrets.PASSWORD }}\"" >> .env
+            echo "MONGODB_HOST=\"${{ secrets.MONGODB_HOST }}\"" >> .env
+            echo "MONGODB_HISTORICAL_DB=\"${{ secrets.MONGODB_HISTORICAL_DB }}\"" >> .env
+            echo "MONGODB_VALIDATED_DB=\"${{ secrets.MONGODB_VALIDATED_DB }}\"" >> .env
+            echo "MONGO_ROOT_USERNAME=\"${{ secrets.MONGO_ROOT_USERNAME }}\"" >> .env
+            echo "MONGO_ROOT_PASSWORD=\"${{ secrets.MONGO_ROOT_PASSWORD }}\"" >> .env
+            echo "MONGO_INITDB_DATABASE=\"${{ secrets.MONGO_INITDB_DATABASE }}\"" >> .env
+            echo "AUTH_USERNAME=\"${{ secrets.AUTH_USERNAME }}\"" >> .env
+            echo "AUTH_PASSWORD=\"${{ secrets.AUTH_PASSWORD }}\"" >> .env
+            echo "SECRET_KEY=\"${{ secrets.SECRET_KEY }}\"" >> .env
+            echo "ALGORITHM=\"${{ secrets.ALGORITHM }}\"" >> .env
+            echo "ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}" >> .env
+            docker compose down
+            docker compose up --build -d

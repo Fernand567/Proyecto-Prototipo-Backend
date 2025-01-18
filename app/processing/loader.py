@@ -1,10 +1,32 @@
-# app/processing/loader.py
-from app.database.mongodb import datos_collection
-import asyncio
+import pandas as pd
 
-async def load_data(df):
-    # Convertir DataFrame a diccionarios de Python
-    data = df.to_dict("records")
-    
-    # Insertar datos en MongoDB
-    await datos_collection.insert_many(data)
+# Función para simplificar el campo 'direccion'
+def format_direccion(direccion):
+    try:
+        if isinstance(direccion, dict) and "nameValuePairs" in direccion:
+            properties = direccion["nameValuePairs"].get("properties", {})
+            return properties.get("nameValuePairs", {}).get("name", None)
+        return None
+    except KeyError:
+        return None
+
+# Función para dar formato a los datos procesados
+def format_data_for_validated_storage(data):
+    formatted_data = []
+    for record in data:
+        try:
+            # Simplificar 'direccion'
+            record["direccion"] = format_direccion(record.get("direccion", {}))
+            
+            # Convertir tipos a los correctos
+            record["latitud"] = float(record["latitud"])
+            record["longitud"] = float(record["longitud"])
+            record["velocidad"] = float(record["velocidad"])
+            record["street_max_speed"] = float(record["street_max_speed"])
+
+            formatted_data.append(record)
+        except (KeyError, ValueError, TypeError) as e:
+            print(f"Error formateando registro: {record}, Error: {e}")
+            continue
+
+    return formatted_data

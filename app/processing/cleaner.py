@@ -1,4 +1,3 @@
-# app/processing/cleaner.py
 import pandas as pd
 
 def clean_data(df: pd.DataFrame) -> pd.DataFrame:
