@@ -1,6 +1,7 @@
 # app/config/settings.py
 import os
 from dotenv import load_dotenv
+from dotenv import set_key
 
 load_dotenv()
 
@@ -25,3 +26,13 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM") 
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
 
+LAST_ID = os.getenv("LAST_ID", "0")
+
+def guardar_ultimo_id(last_id: str):
+    """Guarda el último ID en la variable de entorno y lo actualiza en .env"""
+    os.environ["LAST_ID"] = last_id  
+    set_key(".env", "LAST_ID", last_id) 
+
+def obtener_ultimo_id() -> str:
+    """Obtiene el último ID almacenado en la variable de entorno o .env"""
+    return os.getenv("LAST_ID", "0")

@@ -5,7 +5,7 @@ services:
     build:
       context: .
     ports:
-      - "5000:8000"
+      - "5000:5000"
     env_file:
       - .env
     depends_on:
@@ -17,10 +17,18 @@ services:
     ports:
       - "27017:27017"
     environment:
-      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+      MONGO_INITDB_DATABASE: validated_db
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
     volumes:
       - mongo_data:/data/db
+      - ./data.json:/data/data.json
+    # command: >
+    #   sh -c "
+    #   mongod --fork --logpath /var/log/mongodb.log --bind_ip_all &&
+    #   mongoimport --host localhost --db validated_db --collection validated_data --file /data/data.json --jsonArray &&
+    #   tail -f /var/log/mongodb.log
+    #   "
+
 volumes:
   mongo_data:
