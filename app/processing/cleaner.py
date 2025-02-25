@@ -42,13 +42,6 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     # 6. Eliminar la columna temporal 'max_speed_factor', ya que ya no es necesaria
     df = df.drop(columns=['max_speed_factor'])
 
-    # Posible incorporacion a futurocon biblioteca andrew
-    # Eliminar registros con velocidad máxima inapropiada según el tipo de calle (incongruencias)
-    # # Por ejemplo, una calle residencial no debería tener una velocidad máxima mayor a 60 km/h
-    # df = df[~((df['highway'] == 'residential') & (df['street_max_speed'].astype(float) > 60))]
-    # df = df[~((df['highway'] == 'motorway') & (df['street_max_speed'].astype(float) < 60))] 
-
-
     registros_finales = len(df)
     print(f"Total de registros después del procesamiento: {registros_finales}")
     print(f"Total de registros eliminados: {registros_iniciales - registros_finales}")
